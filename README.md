@@ -282,16 +282,8 @@ This project is for educational/demonstration purposes.
 4. **API Development**: Build REST APIs with FastAPI
 5. **Visualization**: Create interactive dashboards with Streamlit
 
-## ✨ Tips for Hackathon
-
-1. **Start Simple**: Use XGBoost baseline first
-2. **Focus on Demo**: Ensure end-to-end flow works
-3. **Show Explainability**: Use SHAP to show "why" predictions
-4. **Prepare Scenario**: Have a synthetic attack scenario ready
-5. **Document Everything**: README, code comments, demo script
 
 ---
 
-**Happy Hacking! 🚀**
 
 For questions or issues, refer to the main specification document: `PredictiveCyberAttackEngine.txt`
