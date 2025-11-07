@@ -1,0 +1,340 @@
+1. Project summary (1-line)
+
+Build an ML system that consumes historical attack/telemetry data + service/vulnerability data and outputs Attack Probability Scores per asset / network segment, with a dashboard that visualizes predicted hotspots and suggested mitigations.
+
+2. Topics & concepts you’ll need to understand / cover
+
+Network telemetry & logs — Netflow, firewall logs, web server logs, auth logs, IDS/IPS alerts.
+
+Threat intelligence & IoCs — malicious IPs, domain lists, malware hashes.
+
+Vulnerability data — CVE feed, host asset inventory, patch status.
+
+Time-series forecasting & anomaly detection — sequence models, temporal features.
+
+Supervised classification / ranking — probability of attack on an asset in a time window.
+
+Feature engineering for cybersecurity — session counts, failed logins, port scan indicators.
+
+Labeling & ground truth — mapping historical incidents to assets/time windows.
+
+Model evaluation in imbalanced data — precision/recall, AUC-PR, time-to-detect metrics.
+
+Deployment & visualization — streaming ingestion (optional), REST API, dashboard (React/Plotly/D3).
+
+Security & privacy — handling sensitive logs, anonymization, safe demo practices.
+
+
+3. High-level architecture
+
+Data sources ? Ingestion layer (batch or streaming) ? Feature store / ETL ? Model training pipeline ? Inference service (REST) ? Dashboard + Alerts.
+
+Optional: Threat intel microservice and vulnerability sync that enrich features.
+
+4. Data sources (public & synthetic)
+
+(You can use a mix of public datasets + synthetic data for assets you control.)
+
+Public datasets (good for hackathon prototypes): CICIDS2017, CIC-IDS2018, UNSW-NB15, KDD Cup 99 (older), MAWILab, CTU-13 botnet dataset.
+
+Threat Intel: open lists of malicious IPs/domains (for enrichment).
+
+Asset inventory: CSV of hosts with OS, services, CVEs (can be synthetic).
+
+Synthetic telemetry: generate flows/login attempts to simulate normal vs attack patterns (useable for demo if real logs unavailable).
+
+5. What you will predict (problem statement formalized)
+
+For each asset (or network segment) and a chosen prediction window (e.g., next 1 hour / next 24 hours), predict probability P(attack) that the asset will receive a malicious event. Output: asset_id, timestamp, attack_probability, top_contributing_features, recommended_action.
+
+6. Labels (how to create ground truth)
+
+Use IDS alerts, known incident timestamps, or attack rows from datasets.
+
+Aggregate labels per asset/time window: if any malicious event occurred in that window ? label = 1, else 0.
+
+Consider multi-label: attack type (recon, brute-force, data-exfil).
+
+7. Feature ideas (per asset per time window)
+
+Split into static and temporal features.
+
+Static:
+
+OS, open service ports, number of known CVEs, patch_age, asset_criticality.
+
+Temporal (last N minutes/hours):
+
+number_of_unique_src_ips, failed_logins_count, ssh_conn_count, http_4xx_count, http_5xx_count, avg_pkt_size, netflow_bytes_in/out, connection_entropy, new_ports_scanned, IDS_alert_count, ratio_failed_to_success_logins, domain_reputation_hits, blacklisted_ip_hits, previous_attack_count (moving window).
+
+Derived:
+
+trend_slope(feature) over last k windows, seasonality indicators (hour_of_day, day_of_week), anomaly-score from unsupervised model (e.g., IsolationForest).
+
+8. Modeling approaches (progressive)
+
+Start simple, then advance.
+
+Phase A — baseline:
+
+Logistic Regression / XGBoost / RandomForest on engineered features (easy + interpretable).
+
+Phase B — temporal models:
+
+LSTM / GRU or Temporal Convolutional Networks on sequences of per-window features.
+
+Phase C — hybrid & graph:
+
+Use Graph Neural Networks (assets as nodes, network adjacency) to capture lateral movement risk.
+
+Combine sequence model outputs + GNN for final score.
+
+Explainability:
+
+SHAP values, or per-feature contributions for each prediction so dashboard can show "why".
+
+9. Evaluation metrics
+
+Precision / Recall / F1 (focus on high precision OR high recall depending on tolerance)
+
+AUC-ROC and AUC-PR (imbalanced)
+
+Time-to-detection improvement (how early you predicted before the detected incident)
+
+Lead-time distribution (how many hours earlier the model raised a high probability than the actual attack)
+
+Confusion matrix per asset type / attack type.
+
+10. Threat model & ethical considerations
+
+Don’t expose real credentials or PII in public demos.
+
+Anonymize logs.
+
+For demo data, prefer synthetic data or sanitized real logs.
+
+Make clear predictions are probabilistic and require human analyst verification.
+
+11. Tech stack (recommended)
+
+Data ingestion/ETL: Python (pandas), Apache Kafka (optional streaming), Airflow (optional).
+
+Feature store: PostgreSQL or Redis for fast features.
+
+ML: Python, scikit-learn, XGBoost, PyTorch/TensorFlow for sequence models.
+
+Explainability: SHAP.
+
+Backend API: FastAPI or Flask (Python).
+
+Dashboard: React + Plotly / Dash / Streamlit (fast prototype).
+
+Containerization: Docker.
+
+Optional: Elastic Stack (Elasticsearch + Kibana) for logs.
+
+12. 48-Hour Hackathon plan (minimal viable prototype)
+
+Goal: Working pipeline that predicts attack probability per asset and a simple dashboard.
+
+Day 0 (Prep) — Gather team & assign roles: Data/ML, Backend, Frontend, Demo/Slides.
+
+Hour 0–4 — Data & labels
+
+Pick dataset (CICIDS2017 or UNSW-NB15). Download and preprocess.
+
+Create asset list (map flows to asset IPs).
+
+Create time windows (e.g., 1-hour windows) and aggregate features.
+
+Create labels per window.
+
+Hour 4–10 — Features & Baseline model
+
+Engineer temporal aggregates (counts, unique src, failed logins etc.).
+
+Train baseline model: XGBoost with class-weighted loss.
+
+Evaluate AUC-PR, precision@k.
+
+Hour 10–16 — Explainability & API
+
+Use SHAP to compute top features per prediction.
+
+Build FastAPI endpoint: /predict accepts asset/time-window, returns probability + top features.
+
+Hour 16–22 — Dashboard
+
+Build Streamlit or React dashboard that:
+
+Shows asset list with probability score and sparkline of recent risk.
+
+Clicking asset shows top feature contributions and raw logs samples.
+
+Add alarm panel for assets above threshold.
+
+Hour 22–36 — Polish & Demo
+
+Add sample scenarios (simulate attack spikes to show predictions).
+
+Prepare README, slides, and demo script.
+
+Deliverable: Working demo with dataset, model, API, dashboard, and short presentation.
+
+13. Full project roadmap (production-grade)
+
+Week 1 — Data & ETL
+
+Integrate multiple data sources (flows, logs, IDS, vuln scanner).
+
+Build windowing pipeline and feature store.
+
+Week 2 — Modeling
+
+Baseline models + hyperparameter tuning.
+
+Implement sequence model (LSTM/TCN).
+
+Week 3 — Graph & enrichment
+
+Build asset graph, implement GNN for lateral propagation risk.
+
+Week 4 — Deployment
+
+Dockerize model & API. Add CI/CD, model monitoring (drift detection).
+
+Week 5 — UX & Alerts
+
+Full dashboard + alerting (email/Slack). Role-based access.
+
+Ongoing
+
+Auto retrain, incorporate analyst feedback, integrate with SIEM.
+
+14. Step-by-step implementation (detailed, with example code snippets)
+Step A — Data preprocessing (example pseudocode)
+# sliding-window aggregation (pandas)
+import pandas as pd
+logs = pd.read_csv('netflow.csv')  # columns: ts, src_ip, dst_ip, src_port, dst_port, bytes, protocol, flag
+logs['ts'] = pd.to_datetime(logs['ts'])
+logs.set_index('ts', inplace=True)
+
+# define window size
+window = '1H'
+agg = logs.groupby([pd.Grouper(freq=window), 'dst_ip']).agg({
+    'src_ip': lambda s: s.nunique(),
+    'bytes': 'sum',
+    'dst_port': lambda s: s.nunique(),
+    'flag': lambda s: (s=='SYN').sum(),
+}).reset_index().rename(columns={'src_ip':'unique_src_ips', 'bytes':'total_bytes', 'dst_port':'unique_dst_ports'})
+
+Step B — Label creation
+# Suppose `incidents.csv` has columns: incident_ts, dst_ip, attack_type
+inc = pd.read_csv('incidents.csv'); inc['incident_ts'] = pd.to_datetime(inc['incident_ts'])
+# For each window/asset, label = 1 if any incident falls within that window
+
+Step C — Train baseline (XGBoost)
+from sklearn.model_selection import train_test_split
+import xgboost as xgb
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2)
+model = xgb.XGBClassifier(scale_pos_weight=ratio_of_neg_to_pos, n_estimators=200)
+model.fit(X_train, y_train)
+
+Step D — SHAP for explainability
+import shap
+explainer = shap.Explainer(model)
+shap_values = explainer(X_test)
+# Use shap.plots.waterfall for single predictions in dashboard
+
+Step E — Serve predictions with FastAPI
+# main.py
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+class Req(BaseModel):
+    asset_ip: str
+    time_window_start: str
+
+@app.post("/predict")
+def predict(req: Req):
+    # fetch last N windows features from feature store
+    features = fetch_features(req.asset_ip, req.time_window_start)
+    prob = model.predict_proba(features)[0,1]
+    top_feats = compute_shap_top(features)
+    return {"asset": req.asset_ip, "probability": float(prob), "top_features": top_feats}
+
+Step F — Dashboard (Streamlit quick start)
+# app.py (Streamlit)
+import streamlit as st
+st.title("Predictive Cyber Attack Engine")
+asset = st.selectbox("Asset", asset_list)
+if st.button("Get Risk"):
+    resp = requests.post(API_URL+"/predict", json={"asset_ip":asset, "time_window_start":...})
+    st.metric("Attack probability", f"{resp['probability']:.2f}")
+    st.write("Top contributing features", resp['top_features'])
+
+15. Demo script (what to show judges)
+
+Open dashboard: show cluster of assets with risk scores.
+
+Click a high-risk asset — show SHAP explanation and recent log snippet.
+
+Trigger simulated attack (e.g., inject synthetic failed logins and port scans) — show the model’s probability go up within minutes.
+
+Show API response and recommended actions (isolate host, block IP).
+
+Show evaluation metrics and lead-time stats.
+
+16. Success criteria (for hackathon)
+
+End-to-end flow working: data ? model ? API ? dashboard.
+
+Model shows meaningful separation (AUC-PR > baseline) on chosen dataset.
+
+Explainability: dashboard displays top contributing features.
+
+Demo scenario where model detects/anticipates an attack before it’s labelled in logs.
+
+17. Possible extensions (competition differentiators)
+
+Add graph propagation risk: if one asset is compromised, compute probability of lateral compromise.
+
+Real-time streaming inference with Kafka + consumer.
+
+Automated mitigation playbooks (e.g., block IPs temporarily).
+
+Add uncertainty estimation (calibrate probabilities, provide confidence intervals).
+
+18. Risks & mitigation
+
+Imbalanced data ? use resampling, class weights, focal loss.
+
+Label noise ? cross-check across multiple data sources or use weak-supervision to improve labels.
+
+False positives ? tune for low FPs, provide analyst triage UI, and let threshold be configurable.
+
+19. Quick checklist (what to commit to Git)
+
+data/ preprocessing & README describing schema.
+
+notebooks/ feature engineering + EDA.
+
+models/ trained model + eval.
+
+api/ FastAPI app.
+
+dashboard/ Streamlit or React.
+
+docs/ demo script and slides.
+
+20. Final tips & one-page sprint plan for you now
+
+Use Streamlit for fastest dashboard prototyping.
+
+Use XGBoost as baseline: fast, strong, explainable (with SHAP).
+
+Keep prediction window simple (1 hour or 24 hours) for labels.
+
+Prepare a synthetic scenario to demo lead-time: judges love seeing a model predict before an attack.

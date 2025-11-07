@@ -1,0 +1,43 @@
+# PCAE Configuration File
+
+# Data Processing
+window_size: "1H"  # Time window for feature aggregation (1H, 24H, etc.)
+
+# Model Configuration
+model_path: "models/xgboost_model.pkl"
+model_params:
+  max_depth: 6
+  learning_rate: 0.1
+  n_estimators: 200
+  subsample: 0.8
+  colsample_bytree: 0.8
+  random_state: 42
+
+# API Configuration
+api_url: "http://localhost:8000"
+api_host: "0.0.0.0"
+api_port: 8000
+
+# Dashboard Configuration
+threshold_high: 0.7
+threshold_medium: 0.4
+
+# Feature Engineering
+temporal_window_count: 3  # Number of windows for rolling statistics
+feature_selection: true
+
+# Evaluation
+test_size: 0.2
+random_state: 42
+
+# Data Paths
+data_paths:
+  raw: "data/raw/"
+  processed: "data/processed/"
+  features: "data/features/"
+  models: "models/"
+
+# Logging
+log_level: "INFO"
+log_file: "logs/pcae.log"
+

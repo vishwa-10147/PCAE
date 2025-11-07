@@ -1,0 +1,39 @@
+{
+  "feature_names": [
+    "os_encoded",
+    "cve_count",
+    "service_count",
+    "criticality_encoded",
+    "unique_src_ips",
+    "total_bytes",
+    "unique_dst_ports",
+    "total_connections",
+    "rolling_unique_src_ips",
+    "rolling_total_bytes",
+    "rolling_std_src_ips",
+    "delta_unique_src_ips",
+    "delta_total_bytes",
+    "avg_packet_size",
+    "bytes_per_src_ip",
+    "connection_rate",
+    "syn_ratio",
+    "ports_per_connection",
+    "hour_of_day",
+    "day_of_week",
+    "is_weekend",
+    "anomaly_score",
+    "risk_score"
+  ],
+  "metrics": {
+    "accuracy": 0.996031746031746,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.6666666666666666,
+    "true_positives": 1,
+    "false_positives": 0,
+    "true_negatives": 250,
+    "false_negatives": 1
+  }
+}
